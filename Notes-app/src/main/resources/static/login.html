@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notes App - Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f5f5f5; }
+        #box { background: white; padding: 30px; border: 1px solid #ccc; border-radius: 6px; width: 300px; display: flex; flex-direction: column; gap: 10px; }
+        #box h2 { margin: 0 0 5px 0; }
+        #box input { padding: 8px; font-size: 14px; }
+        .buttons { display: flex; gap: 10px; }
+        .buttons button { flex: 1; padding: 8px; cursor: pointer; }
+        #message { font-size: 14px; min-height: 18px; }
+    </style>
+</head>
+<body>
+
+<div id="box">
+    <h2>Notes App</h2>
+    <input type="text" id="usernameInput" placeholder="Username">
+    <input type="password" id="passwordInput" placeholder="Password">
+    <div class="buttons">
+        <button onclick="login()">Login</button>
+        <button onclick="register()">Register</button>
+    </div>
+    <div id="message"></div>
+</div>
+
+<script>
+    const USER_API = "http://localhost:8081";
+
+    // Already logged in -> skip straight to the notes page
+    if (localStorage.getItem("username")) {
+        window.location.href = "index.html";
+    }
+
+    function showMessage(text, isError) {
+        const box = document.getElementById("message");
+        box.textContent = text;
+        box.style.color = isError ? "red" : "green";
+    }
+
+    function getCredentials() {
+        const username = document.getElementById("usernameInput").value.trim();
+        const password = document.getElementById("passwordInput").value;
+        if (!username || !password) {
+            showMessage("Username and password are required.", true);
+            return null;
+        }
+        return { username: username, password: password };
+    }
+
+    async function login() {
+        const creds = getCredentials();
+        if (!creds) return;
+
+        try {
+            const response = await fetch(`${USER_API}/Login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(creds)
+            });
+
+            if (!response.ok) {
+                showMessage("Invalid username or password.", true);
+                return;
+            }
+
+            localStorage.setItem("username", creds.username);
+            window.location.href = "index.html";
+        } catch (e) {
+            showMessage("Cannot reach the user service. Is it running on port 8081?", true);
+        }
+    }
+
+    async function register() {
+        const creds = getCredentials();
+        if (!creds) return;
+
+        try {
+            const response = await fetch(`${USER_API}/Register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(creds)
+            });
+
+            if (!response.ok) {
+                showMessage("Registration failed. That username may already exist.", true);
+                return;
+            }
+
+            showMessage("Registered! Now click Login.", false);
+        } catch (e) {
+            showMessage("Cannot reach the user service. Is it running on port 8081?", true);
+        }
+    }
+</script>
+
+</body>
+</html>
